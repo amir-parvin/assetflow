@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    border-radius: 0 !important;
+  }
+
+  body {
+    @apply text-neutral-900 dark:text-neutral-100 bg-neutral-50 dark:bg-neutral-950;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::selection {
+    background: rgba(229, 192, 123, 0.3);
+  }
+}
+
+@layer components {
+  .geometric-dots {
+    background-image: radial-gradient(circle, #d4d4d4 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+
+  .dark .geometric-dots {
+    background-image: radial-gradient(circle, #404040 1px, transparent 1px);
+  }
+}
