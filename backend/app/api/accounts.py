@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -86,6 +87,7 @@ async def get_purse(
     for seg in segments:
         children_result = await db.execute(
             select(Account).where(Account.parent_id == seg.id, Account.is_active == True)
+            .options(selectinload(Account.children))
             .order_by(Account.created_at.desc())
         )
         children = list(children_result.scalars().all())

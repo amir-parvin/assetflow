@@ -122,3 +122,17 @@ class NetWorthSnapshot(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+
+
+class GoldHolding(Base):
+    __tablename__ = "gold_holdings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(255))
+    weight_vori: Mapped[float] = mapped_column(Numeric(15, 4))
+    purchase_price_per_vori: Mapped[float] = mapped_column(Numeric(15, 2))
+    current_price_per_vori: Mapped[float] = mapped_column(Numeric(15, 2))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
