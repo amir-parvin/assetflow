@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import String, DateTime, ForeignKey, Numeric, Boolean, Integer
+from sqlalchemy import String, DateTime, ForeignKey, Numeric, Boolean, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -21,6 +21,8 @@ class Account(Base):
     is_segment: Mapped[bool] = mapped_column(Boolean, default=False)
     source_type: Mapped[str | None] = mapped_column(String(50), nullable=True)  # stock, real_estate, business
     source_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    sub_category: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
