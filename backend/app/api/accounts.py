@@ -16,6 +16,9 @@ DEFAULT_SEGMENTS = [
     {"name": "Investments", "type": "asset", "category": "investment"},
     {"name": "Property", "type": "asset", "category": "property"},
     {"name": "Business", "type": "asset", "category": "business"},
+    {"name": "Gold", "type": "asset", "category": "gold"},
+    {"name": "Vehicles", "type": "asset", "category": "vehicle"},
+    {"name": "Other Assets", "type": "asset", "category": "other"},
     {"name": "Liabilities", "type": "liability", "category": "liability"},
 ]
 
