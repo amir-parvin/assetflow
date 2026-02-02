@@ -45,7 +45,7 @@ jobs:
         with:
           host: 113.11.1.131
           username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ secrets.JUMP_HOST_SSH_KEY }}
           port: 22002
           script: |
             kubectl rollout restart deployment/assetflow-backend -n assetflow
