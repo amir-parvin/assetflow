@@ -52,5 +52,8 @@ class DashboardSummary(BaseModel):
     total_liabilities: float
     monthly_income: float
     monthly_expense: float
+    savings_rate: float = 0.0
+    debt_to_asset_ratio: float = 0.0
     recent_transactions: list[dict]
     asset_allocation: list[dict]
+    liability_allocation: list[dict] = []

@@ -1,12 +1,11 @@
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.account import Account
 from app.models.transaction import Transaction
 from app.models.user import User
 from app.schemas.report import (
@@ -15,6 +14,11 @@ from app.schemas.report import (
     CashFlowReport, CashFlowPoint,
     DashboardSummary,
     NetWorthReport, NetWorthPoint,
+)
+from app.services.calculations import (
+    get_leaf_accounts, get_net_worth,
+    get_monthly_income_expense,
+    get_asset_allocation, get_liability_allocation,
 )
 
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -25,11 +29,7 @@ async def net_worth(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Account).where(Account.user_id == current_user.id, Account.is_active == True))
-    accounts = result.scalars().all()
-    assets = sum(float(a.balance) for a in accounts if a.type == "asset")
-    liabilities = sum(float(a.balance) for a in accounts if a.type == "liability")
-    nw = assets - liabilities
+    nw, assets, liabilities = await get_net_worth(current_user.id, db)
 
     return NetWorthReport(
         current_net_worth=nw,
@@ -42,8 +42,7 @@ async def balance_sheet(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Account).where(Account.user_id == current_user.id, Account.is_active == True))
-    accounts = result.scalars().all()
+    accounts = await get_leaf_accounts(current_user.id, db)
 
     asset_cats: dict[str, list] = {}
     liability_cats: dict[str, list] = {}
@@ -136,19 +135,16 @@ async def dashboard_summary(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    accts = await db.execute(select(Account).where(Account.user_id == current_user.id, Account.is_active == True))
-    accounts = accts.scalars().all()
-    total_assets = sum(float(a.balance) for a in accounts if a.type == "asset")
-    total_liabilities = sum(float(a.balance) for a in accounts if a.type == "liability")
+    nw, total_assets, total_liabilities = await get_net_worth(current_user.id, db)
+    monthly_income, monthly_expense = await get_monthly_income_expense(current_user.id, db)
 
-    start = date.today() - timedelta(days=30)
-    txns_result = await db.execute(
-        select(Transaction).where(Transaction.user_id == current_user.id, Transaction.date >= start)
-        .order_by(Transaction.date.desc())
-    )
-    txns = txns_result.scalars().all()
-    monthly_income = sum(float(t.amount) for t in txns if t.type == "income")
-    monthly_expense = sum(float(t.amount) for t in txns if t.type == "expense")
+    savings_rate = 0.0
+    if monthly_income > 0:
+        savings_rate = round((monthly_income - monthly_expense) / monthly_income * 100, 2)
+
+    debt_to_asset_ratio = 0.0
+    if total_assets > 0:
+        debt_to_asset_ratio = round(total_liabilities / total_assets * 100, 2)
 
     recent = await db.execute(
         select(Transaction).where(Transaction.user_id == current_user.id)
@@ -159,18 +155,18 @@ async def dashboard_summary(
         for t in recent.scalars().all()
     ]
 
-    allocation: dict[str, float] = {}
-    for a in accounts:
-        if a.type == "asset":
-            allocation[a.category] = allocation.get(a.category, 0) + float(a.balance)
-    alloc_list = [{"category": k, "value": v} for k, v in allocation.items()]
+    asset_alloc = await get_asset_allocation(current_user.id, db)
+    liability_alloc = await get_liability_allocation(current_user.id, db)
 
     return DashboardSummary(
-        net_worth=total_assets - total_liabilities,
+        net_worth=nw,
         total_assets=total_assets,
         total_liabilities=total_liabilities,
         monthly_income=monthly_income,
         monthly_expense=monthly_expense,
+        savings_rate=savings_rate,
+        debt_to_asset_ratio=debt_to_asset_ratio,
         recent_transactions=recent_txns,
-        asset_allocation=alloc_list,
+        asset_allocation=asset_alloc,
+        liability_allocation=liability_alloc,
     )
