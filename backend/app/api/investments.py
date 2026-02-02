@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.account import Account
-from app.models.investment import StockHolding, RealEstateProperty, BusinessInterest
+from app.models.investment import StockHolding, RealEstateProperty, BusinessInterest, GoldHolding
 from app.models.user import User
 from app.schemas.investment import (
     StockHoldingCreate, StockHoldingUpdate, StockHoldingResponse,
@@ -342,13 +342,19 @@ async def portfolio_summary(
     total_biz = sum(float(b.current_value) for b in all_biz)
     biz_cost = sum(float(b.invested_value) for b in all_biz)
 
-    total = total_stocks + total_re + total_biz
-    total_gl = (total_stocks - stocks_cost) + (total_biz - biz_cost)
+    golds = await db.execute(select(GoldHolding).where(GoldHolding.user_id == current_user.id))
+    all_gold = golds.scalars().all()
+    total_gold = sum(float(g.weight_vori) * float(g.current_price_per_vori) for g in all_gold)
+    gold_cost = sum(float(g.weight_vori) * float(g.purchase_price_per_vori) for g in all_gold)
+
+    total = total_stocks + total_re + total_biz + total_gold
+    total_gl = (total_stocks - stocks_cost) + (total_biz - biz_cost) + (total_gold - gold_cost)
 
     return PortfolioSummary(
         total_stocks_value=total_stocks,
         total_real_estate_value=total_re,
         total_business_value=total_biz,
+        total_gold_value=total_gold,
         total_portfolio_value=total,
         total_gain_loss=total_gl,
     )
