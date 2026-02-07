@@ -28,13 +28,10 @@ jobs:
           import asyncio, asyncpg
 
           async def create_test_db():
-              # Parse the DATABASE_URL to get connection params
-              url = '${{ secrets.DATABASE_URL }}'
-              # Convert asyncpg URL format: remove the driver prefix
-              url = url.replace('postgresql+asyncpg://', 'postgresql://')
+              url = '${{ secrets.DATABASE_URL }}'.replace('postgresql+asyncpg://', 'postgresql://')
               conn = await asyncpg.connect(url)
               try:
-                  await conn.execute('CREATE DATABASE assetflow_test')
+                  await conn.execute('CREATE DATABASE assetflow_test OWNER assetflow')
               except asyncpg.DuplicateDatabaseError:
                   pass
               finally:
