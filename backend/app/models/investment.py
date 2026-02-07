@@ -64,12 +64,9 @@ class GoldHolding(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     name: Mapped[str] = mapped_column(String(255))
-    gold_type: Mapped[str] = mapped_column(String(50))  # bar, coin, jewelry, etf
-    weight_grams: Mapped[float] = mapped_column(Numeric(12, 4))
-    purity: Mapped[float] = mapped_column(Numeric(5, 2), default=99.9)
-    purchase_price: Mapped[float] = mapped_column(Numeric(15, 2))
-    current_value: Mapped[float] = mapped_column(Numeric(15, 2))
-    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    weight_vori: Mapped[float] = mapped_column(Numeric(15, 4))
+    purchase_price_per_vori: Mapped[float] = mapped_column(Numeric(15, 2))
+    current_price_per_vori: Mapped[float] = mapped_column(Numeric(15, 2))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -119,34 +116,6 @@ class NetWorthSnapshot(Base):
     net_worth: Mapped[float] = mapped_column(Numeric(15, 2))
     currency: Mapped[str] = mapped_column(String(10), default="USD")
     breakdown: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON string of per-segment totals
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
-    )
-
-
-class GoldHolding(Base):
-    __tablename__ = "gold_holdings"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
-    name: Mapped[str] = mapped_column(String(255))
-    weight_vori: Mapped[float] = mapped_column(Numeric(15, 4))
-    purchase_price_per_vori: Mapped[float] = mapped_column(Numeric(15, 2))
-    current_price_per_vori: Mapped[float] = mapped_column(Numeric(15, 2))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
-    )
-
-
-class GoldHolding(Base):
-    __tablename__ = "gold_holdings"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
-    name: Mapped[str] = mapped_column(String(255))
-    weight_vori: Mapped[float] = mapped_column(Numeric(15, 4))
-    purchase_price_per_vori: Mapped[float] = mapped_column(Numeric(15, 2))
-    current_price_per_vori: Mapped[float] = mapped_column(Numeric(15, 2))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
