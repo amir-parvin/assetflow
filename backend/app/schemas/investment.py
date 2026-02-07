@@ -98,9 +98,57 @@ class BusinessInterestResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+GRAMS_PER_VORI = 11.664
+
+
+class GoldHoldingCreate(BaseModel):
+    name: str
+    weight: float
+    weight_unit: str = "vori"  # "vori" or "gram"
+    purchase_price_per_vori: float
+    current_price_per_vori: float
+
+    def weight_in_vori(self) -> float:
+        if self.weight_unit == "gram":
+            return self.weight / GRAMS_PER_VORI
+        return self.weight
+
+
+class GoldHoldingUpdate(BaseModel):
+    name: str | None = None
+    weight: float | None = None
+    weight_unit: str | None = None  # "vori" or "gram"
+    purchase_price_per_vori: float | None = None
+    current_price_per_vori: float | None = None
+
+    def weight_in_vori(self, current_vori: float) -> float:
+        if self.weight is not None:
+            unit = self.weight_unit or "vori"
+            if unit == "gram":
+                return self.weight / GRAMS_PER_VORI
+            return self.weight
+        return current_vori
+
+
+class GoldHoldingResponse(BaseModel):
+    id: int
+    user_id: int
+    name: str
+    weight_vori: float
+    weight_grams: float = 0
+    purchase_price_per_vori: float
+    current_price_per_vori: float
+    current_value: float = 0
+    gain_loss: float = 0
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class PortfolioSummary(BaseModel):
     total_stocks_value: float
     total_real_estate_value: float
     total_business_value: float
+    total_gold_value: float = 0
     total_portfolio_value: float
     total_gain_loss: float
