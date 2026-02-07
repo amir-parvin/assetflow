@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -6,48 +6,54 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  REGISTRY: registry.homelab.alamin.rocks
+  BACKEND_IMAGE: registry.homelab.alamin.rocks/assetflow/backend
+  FRONTEND_IMAGE: registry.homelab.alamin.rocks/assetflow/frontend
+
 jobs:
-  lint-backend:
+  test-backend:
     runs-on: homelab-runner
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+      - run: pip install -r backend/requirements.txt
+      - run: cd backend && pytest -v
 
-      - name: Install dependencies
-        run: pip install -r backend/requirements.txt
-
-      - name: Run tests
-        run: cd backend && pytest -v
-
-  build-frontend:
+  lint-frontend:
     runs-on: homelab-runner
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - run: cd frontend && npm ci && npm run lint
 
-      - name: Install and build frontend
-        run: cd frontend && npm ci && npm run build
-
-      - name: Lint frontend
-        run: cd frontend && npm run lint
-
-  docker-build:
+  build-and-deploy:
     runs-on: homelab-runner
-    needs: [lint-backend, build-frontend]
+    needs: [test-backend, lint-frontend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build backend image
-        run: docker build -t assetflow-backend backend/
+      - name: Log in to registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login ${{ env.REGISTRY }} -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
 
-      - name: Build frontend image
-        run: docker build -t assetflow-frontend frontend/
+      - name: Build and push backend
+        run: |
+          docker build -t ${{ env.BACKEND_IMAGE }}:latest backend/
+          docker push ${{ env.BACKEND_IMAGE }}:latest
+
+      - name: Build and push frontend
+        run: |
+          docker build -t ${{ env.FRONTEND_IMAGE }}:latest frontend/
+          docker push ${{ env.FRONTEND_IMAGE }}:latest
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl rollout restart deployment/assetflow-backend -n assetflow
+          kubectl rollout restart deployment/assetflow-frontend -n assetflow
+          kubectl rollout status deployment/assetflow-backend -n assetflow --timeout=120s
+          kubectl rollout status deployment/assetflow-frontend -n assetflow --timeout=120s
