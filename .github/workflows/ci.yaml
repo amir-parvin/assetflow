@@ -14,22 +14,8 @@ env:
 jobs:
   test-backend:
     runs-on: homelab-runner
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: assetflow
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     env:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/assetflow
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -37,7 +23,25 @@ jobs:
           python-version: "3.13"
       - run: pip install -r backend/requirements.txt
       - name: Create test database
-        run: PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE assetflow_test;"
+        run: |
+          python -c "
+          import asyncio, asyncpg
+
+          async def create_test_db():
+              # Parse the DATABASE_URL to get connection params
+              url = '${{ secrets.DATABASE_URL }}'
+              # Convert asyncpg URL format: remove the driver prefix
+              url = url.replace('postgresql+asyncpg://', 'postgresql://')
+              conn = await asyncpg.connect(url)
+              try:
+                  await conn.execute('CREATE DATABASE assetflow_test')
+              except asyncpg.DuplicateDatabaseError:
+                  pass
+              finally:
+                  await conn.close()
+
+          asyncio.run(create_test_db())
+          "
       - run: cd backend && pytest -v
 
   lint-frontend:
