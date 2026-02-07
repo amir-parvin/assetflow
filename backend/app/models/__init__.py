@@ -7,9 +7,9 @@ from app.models.investment import (
     BusinessInterest,
     GoldHolding,
     Vehicle,
-    InterestEntry,
     NetWorthSnapshot,
 )
+from app.models.interest import InterestEntry
 
 __all__ = [
     "User",

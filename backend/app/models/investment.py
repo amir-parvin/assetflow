@@ -90,21 +90,6 @@ class Vehicle(Base):
     )
 
 
-class InterestEntry(Base):
-    __tablename__ = "interest_entries"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
-    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"), index=True)
-    amount: Mapped[float] = mapped_column(Numeric(15, 2))
-    rate: Mapped[float | None] = mapped_column(Numeric(7, 4), nullable=True)
-    date: Mapped[date] = mapped_column(Date, index=True)
-    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
-    )
-
-
 class NetWorthSnapshot(Base):
     __tablename__ = "net_worth_snapshots"
 
