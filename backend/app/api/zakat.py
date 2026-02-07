@@ -21,11 +21,12 @@ async def calculate_zakat(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    # Cash & bank accounts
+    # Cash & bank accounts (exclude segments to avoid double-counting)
     accts = await db.execute(
         select(Account).where(
             Account.user_id == current_user.id,
             Account.is_active == True,
+            Account.is_segment == False,
             Account.type == "asset",
             Account.category.in_(["cash", "bank"]),
         )

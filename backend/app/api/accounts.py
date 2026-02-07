@@ -109,7 +109,9 @@ async def list_accounts(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(Account).where(Account.user_id == current_user.id).order_by(Account.created_at.desc())
+        select(Account).where(Account.user_id == current_user.id)
+        .options(selectinload(Account.children))
+        .order_by(Account.created_at.desc())
     )
     return result.scalars().all()
 
